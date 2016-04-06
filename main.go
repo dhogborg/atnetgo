@@ -111,19 +111,20 @@ func fetchData(ctx *cli.Context) {
 
 	for _, s := range dc.Stations() {
 
-		if station == nil || station.StationName == ctx.GlobalString("station") {
+		if station == nil || s.StationName == ctx.GlobalString("station") {
 			station = s
 		}
 
-		for _, m := range station.Modules() {
+		for _, m := range s.Modules() {
 
 			if module == nil || m.ModuleName == ctx.GlobalString("module") {
 				module = m
-				break
 			}
 
 		}
 	}
+
+	fmt.Printf("%s: %s\n", station.StationName, module.ModuleName)
 
 	printModuleData(module, "")
 }
