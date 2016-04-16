@@ -1,6 +1,7 @@
 package main
 
 import (
+	"encoding/json"
 	"fmt"
 	"os"
 
@@ -18,24 +19,33 @@ func main() {
 	app.Email = "d@hogborg.se"
 
 	app.Action = func(c *cli.Context) {
-
-		fetchData(c)
+		d := getDevices(c)
+		listPrint(d)
 	}
 
 	app.Commands = []cli.Command{
 		cli.Command{
-			Name:  "list",
-			Usage: "List the stations and the modules attached",
+			Name:  "pretty",
+			Usage: "Pretty print the stations and the modules attached",
 			Action: func(c *cli.Context) {
-
-				list(c)
+				d := getDevices(c)
+				prettyPrint(d)
 			},
 		},
 		cli.Command{
-			Name:  "fetch",
-			Usage: "Fetch and display data",
+			Name:  "list",
+			Usage: "List the modules and the values in a greppable list",
 			Action: func(c *cli.Context) {
-				fetchData(c)
+				d := getDevices(c)
+				listPrint(d)
+			},
+		},
+		cli.Command{
+			Name:  "json",
+			Usage: "Output a machine readable json string",
+			Action: func(c *cli.Context) {
+				d := getDevices(c)
+				jsonPrint(d)
 			},
 		},
 	}
@@ -76,60 +86,14 @@ func main() {
 	app.Run(os.Args)
 }
 
-func list(ctx *cli.Context) {
+func getDevices(ctx *cli.Context) *netatmo.DeviceCollection {
 
-	dc := getDeviceCollection(netatmo.Config{
+	config := netatmo.Config{
 		ClientID:     ctx.GlobalString("appid"),
 		ClientSecret: ctx.GlobalString("appsecret"),
 		Username:     ctx.GlobalString("user"),
 		Password:     ctx.GlobalString("password"),
-	})
-
-	for _, station := range dc.Stations() {
-
-		fmt.Printf("Station: %s\n", station.StationName)
-
-		for _, module := range station.Modules() {
-
-			fmt.Printf("\tModule: %s\n", module.ModuleName)
-			printModuleData(module, "\t\t")
-		}
 	}
-}
-
-func fetchData(ctx *cli.Context) {
-
-	dc := getDeviceCollection(netatmo.Config{
-		ClientID:     ctx.GlobalString("appid"),
-		ClientSecret: ctx.GlobalString("appsecret"),
-		Username:     ctx.GlobalString("user"),
-		Password:     ctx.GlobalString("password"),
-	})
-
-	var station *netatmo.Device
-	var module *netatmo.Device
-
-	for _, s := range dc.Stations() {
-
-		if station == nil || s.StationName == ctx.GlobalString("station") {
-			station = s
-		}
-
-		for _, m := range s.Modules() {
-
-			if module == nil || m.ModuleName == ctx.GlobalString("module") {
-				module = m
-			}
-
-		}
-	}
-
-	fmt.Printf("%s: %s\n", station.StationName, module.ModuleName)
-
-	printModuleData(module, "")
-}
-
-func getDeviceCollection(config netatmo.Config) *netatmo.DeviceCollection {
 
 	n, err := netatmo.NewClient(config)
 	if err != nil {
@@ -148,23 +112,71 @@ func getDeviceCollection(config netatmo.Config) *netatmo.DeviceCollection {
 	}
 
 	return dc
+
 }
 
-func printModuleData(module *netatmo.Device, prefix string) {
-
-	_, data := module.Data()
-	for dataType, value := range data {
-		output := ""
-		switch value := value.(type) {
-		case float32, float64:
-			output = fmt.Sprintf("%0.2f", value)
-		case string:
-			output = value
-		case int, int32, int64:
-			output = fmt.Sprintf("%d", value)
-		default:
-			output = "–"
+func listPrint(devices *netatmo.DeviceCollection) {
+	for _, station := range devices.Stations() {
+		for _, module := range station.Modules() {
+			_, data := module.Data()
+			for dataType, value := range data {
+				fmt.Printf("%s: %s: %s: %s\n", station.StationName, module.ModuleName, dataType, valueString(value))
+			}
 		}
-		fmt.Printf("%s%s: %s\n", prefix, dataType, output)
+	}
+}
+
+func jsonPrint(devices *netatmo.DeviceCollection) {
+
+	block := map[string]interface{}{}
+
+	for _, station := range devices.Stations() {
+		sblock := map[string]interface{}{}
+		for _, module := range station.Modules() {
+
+			mblock := map[string]string{}
+			_, data := module.Data()
+			for dataType, value := range data {
+				// fmt.Printf("%s: %s: %s: %s\n", station.StationName, module.ModuleName, dataType, valueString(value))
+				mblock[dataType] = valueString(value)
+			}
+
+			sblock[module.ModuleName] = mblock
+
+		}
+
+		block[station.StationName] = sblock
+	}
+
+	b, err := json.Marshal(block)
+	if err != nil {
+		panic(err)
+	}
+	fmt.Println(string(b))
+}
+
+func prettyPrint(devices *netatmo.DeviceCollection) {
+	for _, station := range devices.Stations() {
+		fmt.Printf("Station: %s\n", station.StationName)
+		for _, module := range station.Modules() {
+			fmt.Printf("\t%s:\n", module.ModuleName)
+			_, data := module.Data()
+			for dataType, value := range data {
+				fmt.Printf("\t\t%s: %s\n", dataType, valueString(value))
+			}
+		}
+	}
+}
+
+func valueString(value interface{}) string {
+	switch value := value.(type) {
+	case float32, float64:
+		return fmt.Sprintf("%0.2f", value)
+	case string:
+		return value
+	case int, int32, int64:
+		return fmt.Sprintf("%d", value)
+	default:
+		return "-"
 	}
 }
