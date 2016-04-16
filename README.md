@@ -15,46 +15,89 @@ Using `grep` and `awk` a single value can be extracted from the output.
 ## Examples
 #### Print all stations and all modules
 ```
-$ atnetgo list
+$ atnetgo pretty
 Station: Office
-    Module: Outdoor
-        Temperature: 9.40
-        Humidity: 89
-    Module: Indoor
-        Humidity: 41
-        Noise: 41
-        Pressure: 998.50
-        Temperature: 22.90
-        CO2: 874
+	Outdoor:
+		Humidity: 81
+		Temperature: 10.40
+	Indoor:
+		Pressure: 992.40
+		Temperature: 21.40
+		CO2: 435
+		Humidity: 39
+		Noise: 40
 Station: Home
-    Module: Rain
-        Rain: 0.00
-    Module: Outdoor
-        Temperature: 8.60
-        Humidity: 91
-    Module: Indoor
-        Pressure: 1000.10
-        Temperature: 21.60
-        CO2: 697
-        Humidity: 48
-        Noise: 49
+	Rain:
+		Rain: 0.00
+	Outdoor:
+		Temperature: 9.00
+		Humidity: 83
+	Indoor:
+		Temperature: 22.00
+		CO2: 1057
+		Humidity: 49
+		Noise: 39
+		Pressure: 993.80
 ```
 
-#### Printing a single module
 ```
-$ atnetgo --station 'Home' --module 'Indoor'
+$ atnetgo list
+Office: Outdoor: Temperature: 10.40
+Office: Outdoor: Humidity: 81
+Office: Indoor: Temperature: 21.40
+Office: Indoor: CO2: 435
+Office: Indoor: Humidity: 39
+Office: Indoor: Noise: 40
+Office: Indoor: Pressure: 992.40
+Home: Rain: Rain: 0.00
+Home: Outdoor: Temperature: 9.00
+Home: Outdoor: Humidity: 83
+Home: Indoor: Temperature: 22.00
+Home: Indoor: CO2: 1057
+Home: Indoor: Humidity: 49
+Home: Indoor: Noise: 39
+Home: Indoor: Pressure: 993.80
 ```
+
 ```
-Pressure: 1000.10
-Temperature: 21.60
-CO2: 697
-Humidity: 48
-Noise: 49
+$ atnetgo json
+{
+	"Office": {
+		"Indoor": {
+			"CO2": "431",
+			"Humidity": "39",
+			"Noise": "37",
+			"Pressure": "992.40",
+			"Temperature": "21.40"
+		},
+		"Outdoor": {
+			"Humidity": "81",
+			"Temperature": "10.50"
+		}
+	},
+	"Home": {
+		"Indoor": {
+			"CO2": "1171",
+			"Humidity": "49",
+			"Noise": "37",
+			"Pressure": "994.00",
+			"Temperature": "22.00"
+		},
+		"Outdoor": {
+			"Humidity": "83",
+			"Temperature": "9.00"
+		},
+		"Rain": {
+			"Rain": "0.00"
+		}
+	}
+}
 ```
+The example above is prettyfied for clarity. Actual output is plain json without newlines or tabs.
 
 #### Extracting a single value
 ```
-$ atnetgo --station 'Home' --module 'Indoor' | grep 'Temperature' | awk '{print $2}'
+$ atnetgo list | grep 'Temperature' | awk '{print $4}'
 ```
 ```
 21.60
@@ -76,17 +119,19 @@ AUTHOR:
   github.com/dhogborg - <d@hogborg.se>
 
 COMMANDS:
-   list     List the stations and the modules attached
-   fetch    Fetch and display data
-   help, h  Shows a list of commands or help for one command
+   pretty	Pretty print the stations and the modules attached
+   list		List the modules and the values in a greppable list
+   json		Output a machine readable json string
+   help, h	Shows a list of commands or help for one command
    
 GLOBAL OPTIONS:
-   --appid          Netatmo application ID [$NETATMO_APP_ID]
-   --appsecret      Netatmo application Secret [$NETATMO_APP_SECRET]
-   --user, -u       Netatmo login name [$NETATMO_USER]
-   --password, -p   Netatmo password [$NETATMO_PASSWORD]
-   --station, -s    The station name, default to the first one [$NETATMO_STATION]
-   --module, -m     Station module name, default to the first one [$NETATMO_MODULE]
-   --help, -h       show help
-   --version, -v    print the version
+   --appid 		Netatmo application ID [$NETATMO_APP_ID]
+   --appsecret 		Netatmo application Secret [$NETATMO_APP_SECRET]
+   --user, -u 		Netatmo login name [$NETATMO_USER]
+   --password, -p 	Netatmo password [$NETATMO_PASSWORD]
+   --station, -s 	The station name, default to the first one [$NETATMO_STATION]
+   --module, -m 	Station module name, default to the first one [$NETATMO_MODULE]
+   --help, -h		show help
+   --version, -v	print the version
+   
    ```
