@@ -6,6 +6,19 @@ It's function is to provide readout of netatmo station values. Using the command
 
 Using `grep` and `awk` a single value can be extracted from the output.
 
+## Running
+Binary release is available from the Releases page: https://github.com/dhogborg/atnetgo/releases/
+
+Currently binary release is provided for the following platforms:
+* OS X (x64)
+* Linux (x64)
+* Linux (arm5)
+* Linux (arm7)
+* Windows (x64)
+* Windows (386)
+
+Using the binary you don't need to provide your own Netatmo AppID and Client secret.
+
 ## Setup 
 1. Create a Netatmo app ID: https://dev.netatmo.com/dev/createapp, put the ID and the Client Secret in the secrets.go file (follow instructions in secrets.example.go).
 2. Use your netatmo credentials, perferably as environment variables to avoid storing passwords in your .bash_history
