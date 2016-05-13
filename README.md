@@ -7,7 +7,7 @@ It's function is to provide readout of netatmo station values. Using the command
 Using `grep` and `awk` a single value can be extracted from the output.
 
 ## Setup 
-1. Create a Netatmo app ID: https://dev.netatmo.com/dev/createapp, use the AppID and AppSecret, perferably as environment variables (see **Options**).
+1. Create a Netatmo app ID: https://dev.netatmo.com/dev/createapp, put the ID and the Client Secret in the secrets.go file (follow instructions in secrets.example.go).
 2. Use your netatmo credentials, perferably as environment variables to avoid storing passwords in your .bash_history
 3. Run atnetgo with the `list` command to see what's on your account.
 4. Use `--station` and `--module` to specify a single module to print
@@ -113,7 +113,7 @@ USAGE:
    atnetgo [global options] command [command options] [arguments...]
 
 VERSION:
-   0.0.1
+   0.0.2
 
 AUTHOR:
   github.com/dhogborg - <d@hogborg.se>
@@ -125,8 +125,6 @@ COMMANDS:
    help, h	Shows a list of commands or help for one command
    
 GLOBAL OPTIONS:
-   --appid 		Netatmo application ID [$NETATMO_APP_ID]
-   --appsecret 		Netatmo application Secret [$NETATMO_APP_SECRET]
    --user, -u 		Netatmo login name [$NETATMO_USER]
    --password, -p 	Netatmo password [$NETATMO_PASSWORD]
    --station, -s 	The station name, default to the first one [$NETATMO_STATION]

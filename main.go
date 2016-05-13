@@ -14,7 +14,7 @@ func main() {
 	app := cli.NewApp()
 	app.Name = "atnetgo"
 	app.Usage = "Read values from the Netatmo API and write to stdout"
-	app.Version = "0.0.1"
+	app.Version = "0.0.2"
 	app.Author = "github.com/dhogborg"
 	app.Email = "d@hogborg.se"
 
@@ -52,16 +52,6 @@ func main() {
 
 	app.Flags = []cli.Flag{
 		cli.StringFlag{
-			Name:   "appid",
-			Usage:  "Netatmo application ID",
-			EnvVar: "NETATMO_APP_ID",
-		},
-		cli.StringFlag{
-			Name:   "appsecret",
-			Usage:  "Netatmo application Secret",
-			EnvVar: "NETATMO_APP_SECRET",
-		},
-		cli.StringFlag{
 			Name:   "user,u",
 			Usage:  "Netatmo login name",
 			EnvVar: "NETATMO_USER",
@@ -89,8 +79,8 @@ func main() {
 func getDevices(ctx *cli.Context) *netatmo.DeviceCollection {
 
 	config := netatmo.Config{
-		ClientID:     ctx.GlobalString("appid"),
-		ClientSecret: ctx.GlobalString("appsecret"),
+		ClientID:     NetatmoAppID,
+		ClientSecret: NetatmoAppSecret,
 		Username:     ctx.GlobalString("user"),
 		Password:     ctx.GlobalString("password"),
 	}
