@@ -6,6 +6,12 @@ It's function is to provide readout of netatmo station values. Using the command
 
 Using `grep` and `awk` a single value can be extracted from the output.
 
+The following output modes are currently avaibale:
+* Pretty, for human readers
+* List, for grep, awk and other cli tools
+* JSON, for those that like it
+* InfluxDB Line protocol, for insertion into time series database [InfluxDB](http://influxdata.com/).
+
 ## Running
 Binary release is available from the Releases page: https://github.com/dhogborg/atnetgo/releases/
 
@@ -141,6 +147,7 @@ COMMANDS:
    pretty	Pretty print the stations and the modules attached
    list		List the modules and the values in a greppable list
    json		Output a machine readable json string
+   influx	Output InfluxDB line format
    help, h	Shows a list of commands or help for one command
    
 GLOBAL OPTIONS:

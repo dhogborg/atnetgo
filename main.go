@@ -57,6 +57,14 @@ func main() {
 				jsonPrint(d)
 			},
 		},
+		cli.Command{
+			Name:  "influx",
+			Usage: "Output InfluxDB line format",
+			Action: func(c *cli.Context) {
+				d := getDevices(c)
+				linePrint(d)
+			},
+		},
 	}
 
 	app.Flags = []cli.Flag{
@@ -177,6 +185,39 @@ func prettyPrint(devices *DeviceCollection) {
 			_, data := module.Data()
 			for dataType, value := range data {
 				fmt.Printf("\t\t%s: %s\n", dataType, valueString(value))
+			}
+		}
+	}
+}
+
+func linePrint(devices *DeviceCollection) {
+
+	// some values should be represented as integers
+	typeSuffix := func(t string) string {
+		typemap := map[string]string{
+			"co2":      "i",
+			"humidity": "i",
+			"noise":    "i",
+		}
+		if s, ok := typemap[strings.ToLower(t)]; ok {
+			return s
+		}
+		return ""
+	}
+
+	tags := make([]string, 2)
+
+	for _, station := range devices.Stations() {
+		tags[0] = "station=" + strings.ToLower(station.StationName)
+
+		for _, module := range station.Modules() {
+			tags[1] = "module=" + strings.ToLower(module.ModuleName)
+
+			_, data := module.Data()
+			for dataType, value := range data {
+				tagstr := strings.Join(tags, ",")
+				tagstr = strings.Replace(tagstr, " ", "_", -1)
+				fmt.Printf("%s,%s value=%s%s\n", strings.ToLower(dataType), tagstr, valueString(value), typeSuffix(dataType))
 			}
 		}
 	}
