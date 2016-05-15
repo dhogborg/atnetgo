@@ -19,11 +19,17 @@ Currently binary release is provided for the following platforms:
 
 Using the binary you don't need to provide your own Netatmo AppID and Client secret.
 
-## Setup 
+## Building
+Only neccessary if modifying the source. Otherwhise, look for a prebuilt binary under releases.
+
+1. `make setup` to install godep, the tooling used for building.
 1. Create a Netatmo app ID: https://dev.netatmo.com/dev/createapp, put the ID and the Client Secret in the secrets.go file (follow instructions in secrets.example.go).
-2. Use your netatmo credentials, perferably as environment variables to avoid storing passwords in your .bash_history
-3. Run atnetgo with the `list` command to see what's on your account.
-4. Use `--station` and `--module` to specify a single module to print
+1. `make build` to build the project with your current platform. `make all` to build all configured platforms separatly and package them for release.
+1. `make install` to build and install the binary in your $GOPATH/bin folder.
+1. Run atnetgo with the `pretty` command to see what's on your account.
+1. Use `--station` and `--module` to filter by name.
+
+Perferably specify your credentials as environment variables to avoid storing passwords in your .bash_history
 
 ## Examples
 #### Print all stations and all modules
@@ -126,7 +132,7 @@ USAGE:
    atnetgo [global options] command [command options] [arguments...]
 
 VERSION:
-   0.0.2
+   0.0.3
 
 AUTHOR:
   github.com/dhogborg - <d@hogborg.se>
@@ -140,9 +146,7 @@ COMMANDS:
 GLOBAL OPTIONS:
    --user, -u 		Netatmo login name [$NETATMO_USER]
    --password, -p 	Netatmo password [$NETATMO_PASSWORD]
-   --station, -s 	The station name, default to the first one [$NETATMO_STATION]
-   --module, -m 	Station module name, default to the first one [$NETATMO_MODULE]
+   --station, -s 	A station filter, default to none (print everything) [$NETATMO_STATION]
    --help, -h		show help
    --version, -v	print the version
-   
-   ```
+```

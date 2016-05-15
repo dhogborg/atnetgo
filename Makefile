@@ -1,11 +1,16 @@
 
 .PHONY: clean build run
 
-default: build_darwin
+default: build
 
 setup:
 	go get github.com/tools/godep
-	
+
+build:
+	godep go build -a -o ./build/atnetgo *.go
+
+install:
+	godep go install .
 
 build_darwin:
 	GOOS=darwin GOARCH=amd64 godep go build -a -o ./build/atnetgo *.go

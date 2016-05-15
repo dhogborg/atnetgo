@@ -4,17 +4,26 @@ import (
 	"encoding/json"
 	"fmt"
 	"os"
+	"strings"
 
 	log "github.com/Sirupsen/logrus"
 	"github.com/codegangsta/cli"
 	netatmo "github.com/exzz/netatmo-api-go"
 )
 
+// filterd device collection
+type DeviceCollection struct {
+	NetatmoStations []*netatmo.Device
+	Modules         []*netatmo.Device
+}
+
+func (d *DeviceCollection) Stations() []*netatmo.Device { return d.NetatmoStations }
+
 func main() {
 	app := cli.NewApp()
 	app.Name = "atnetgo"
 	app.Usage = "Read values from the Netatmo API and write to stdout"
-	app.Version = "0.0.2"
+	app.Version = "0.0.3"
 	app.Author = "github.com/dhogborg"
 	app.Email = "d@hogborg.se"
 
@@ -63,20 +72,15 @@ func main() {
 		},
 		cli.StringFlag{
 			Name:   "station,s",
-			Usage:  "The station name, default to the first one",
+			Usage:  "A station filter, default to none (print everything)",
 			EnvVar: "NETATMO_STATION",
-		},
-		cli.StringFlag{
-			Name:   "module,m",
-			Usage:  "Station module name, default to the first one",
-			EnvVar: "NETATMO_MODULE",
 		},
 	}
 
 	app.Run(os.Args)
 }
 
-func getDevices(ctx *cli.Context) *netatmo.DeviceCollection {
+func getDevices(ctx *cli.Context) *DeviceCollection {
 
 	config := netatmo.Config{
 		ClientID:     NetatmoAppID,
@@ -101,11 +105,36 @@ func getDevices(ctx *cli.Context) *netatmo.DeviceCollection {
 		os.Exit(1)
 	}
 
-	return dc
+	collection := filterDevices(ctx, dc)
+
+	return collection
 
 }
 
-func listPrint(devices *netatmo.DeviceCollection) {
+func filterDevices(ctx *cli.Context, dc *netatmo.DeviceCollection) *DeviceCollection {
+	collection := &DeviceCollection{
+		NetatmoStations: dc.Body.Stations,
+		Modules:         dc.Body.Modules,
+	}
+
+	if sfilter := ctx.GlobalString("station"); sfilter != "" {
+		stations := []*netatmo.Device{}
+		for _, station := range collection.Stations() {
+			if matchesFilter(station, sfilter) {
+				stations = append(stations, station)
+			}
+		}
+		collection.NetatmoStations = stations
+	}
+
+	return collection
+}
+
+func matchesFilter(device *netatmo.Device, filter string) bool {
+	return strings.Index(device.StationName, filter) > -1
+}
+
+func listPrint(devices *DeviceCollection) {
 	for _, station := range devices.Stations() {
 		for _, module := range station.Modules() {
 			_, data := module.Data()
@@ -116,25 +145,20 @@ func listPrint(devices *netatmo.DeviceCollection) {
 	}
 }
 
-func jsonPrint(devices *netatmo.DeviceCollection) {
+func jsonPrint(devices *DeviceCollection) {
 
 	block := map[string]interface{}{}
 
 	for _, station := range devices.Stations() {
 		sblock := map[string]interface{}{}
 		for _, module := range station.Modules() {
-
 			mblock := map[string]string{}
 			_, data := module.Data()
 			for dataType, value := range data {
-				// fmt.Printf("%s: %s: %s: %s\n", station.StationName, module.ModuleName, dataType, valueString(value))
 				mblock[dataType] = valueString(value)
 			}
-
 			sblock[module.ModuleName] = mblock
-
 		}
-
 		block[station.StationName] = sblock
 	}
 
@@ -145,7 +169,7 @@ func jsonPrint(devices *netatmo.DeviceCollection) {
 	fmt.Println(string(b))
 }
 
-func prettyPrint(devices *netatmo.DeviceCollection) {
+func prettyPrint(devices *DeviceCollection) {
 	for _, station := range devices.Stations() {
 		fmt.Printf("Station: %s\n", station.StationName)
 		for _, module := range station.Modules() {
