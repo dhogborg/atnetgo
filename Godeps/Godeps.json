@@ -1,7 +1,10 @@
 {
 	"ImportPath": "github.com/dhogborg/atnetgo",
-	"GoVersion": "go1.6",
-	"GodepVersion": "v66",
+	"GoVersion": "go1.7",
+	"GodepVersion": "v75",
+	"Packages": [
+		"./..."
+	],
 	"Deps": [
 		{
 			"ImportPath": "github.com/Sirupsen/logrus",
@@ -10,12 +13,12 @@
 		},
 		{
 			"ImportPath": "github.com/codegangsta/cli",
-			"Comment": "1.2.0-50-ga14c5b4",
+			"Comment": "v1.4.0",
 			"Rev": "a14c5b47c7efa4ff80cc42e1079a34b4756f2311"
 		},
 		{
-			"ImportPath": "github.com/exzz/netatmo-api-go",
-			"Rev": "1e275a22ef3ff98fb281dad0d00c051e83fa5b71"
+			"ImportPath": "github.com/dhogborg/netatmo-api-go",
+			"Rev": "a36c46209ccdc7ad1ff13a781c14b9804f083dea"
 		},
 		{
 			"ImportPath": "golang.org/x/net/context",

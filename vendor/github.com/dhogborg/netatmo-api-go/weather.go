@@ -17,7 +17,7 @@ const (
 	// DefaultAuthURL is netatmo auth url
 	authURL = baseURL + "oauth2/token"
 	// DefaultDeviceURL is netatmo device url
-	deviceURL = baseURL + "api/devicelist"
+	deviceURL = baseURL + "/api/getstationsdata"
 )
 
 // Config is used to specify credential to Netatmo API
@@ -33,25 +33,17 @@ type Config struct {
 }
 
 // Client use to make request to Netatmo API
-// ClientID : Client ID from netatmo app registration at http://dev.netatmo.com/dev/listapps
-// ClientSecret : Client app secret
-// Username : Your netatmo account username
-// Password : Your netatmo account password
-// Stations : Contains all Station account
 type Client struct {
 	oauth        *oauth2.Config
 	httpClient   *http.Client
 	httpResponse *http.Response
+	Dc           *DeviceCollection
 }
 
-// DeviceCollection hold all devices from netatmo account (stations and modules)
-// Error : returned error (nil if OK)
-// Stations : List of stations
-// Modules : List of additionnal modules
+// DeviceCollection hold all devices from netatmo account
 type DeviceCollection struct {
 	Body struct {
-		Stations []*Device `json:"devices"`
-		Modules  []*Device
+		Devices []*Device `json:"devices"`
 	}
 }
 
@@ -67,17 +59,15 @@ type DeviceCollection struct {
 //  "NAModule2" : for the wind gauge module
 // DashboardData : Data collection from device sensors
 // DataType : List of available datas
-// MainDevice : Id of main station (only for module)
-// AssociatedModules : Associated modules (only for station)
+// LinkedModules : Associated modules (only for station)
 type Device struct {
-	ID                string `json:"_id"`
-	StationName       string `json:"station_name"`
-	ModuleName        string `json:"module_name"`
-	Type              string
-	DashboardData     DashboardData `json:"dashboard_data"`
-	DataType          []string      `json:"data_type"`
-	MainDevice        string        `json:"main_device,omitempty"`
-	AssociatedModules []*Device     `json:"-"`
+	ID            string `json:"_id"`
+	StationName   string `json:"station_name"`
+	ModuleName    string `json:"module_name"`
+	Type          string
+	DashboardData DashboardData `json:"dashboard_data"`
+	DataType      []string      `json:"data_type"`
+	LinkedModules []*Device     `json:"modules"`
 }
 
 // DashboardData is used to store sensor values
@@ -96,21 +86,90 @@ type Device struct {
 // GustStrength : Speed of the last 5 min highest gust wind @ LastMesure (in km/h)
 // LastMessage : Contains timestamp of last data received
 type DashboardData struct {
-	Temperature         float32 `json:"Temperature,omitempty"`
-	Humidity            int32   `json:"Humidity,omitempty"`
-	CO2                 int32   `json:"CO2,omitempty"`
-	Noise               int32   `json:"Noise,omitempty"`
-	Pressure            float32 `json:"Pressure,omitempty"`
-	AbsolutePressure    float32 `json:"AbsolutePressure,omitempty"`
-	Rain                float32 `json:"Rain,omitempty"`
-	Rain1Hour           float32 `json:"sum_rain_1,omitempty"`
-	Rain1Day            float32 `json:"sum_rain_24,omitempty"`
-	WindAngle           float32 `json:"WindAngle,omitempty"`
-	WindStrength        float32 `json:"WindStrength,omitempty"`
-	GustAngle           float32 `json:"GustAngle,omitempty"`
-	GustStrengthfloat32 float32 `json:"GustStrengthfloat32,omitempty"`
-	LastMesure          float64 `json:"time_utc"`
+	Temperature      float32 `json:"Temperature,omitempty"`
+	Humidity         int32   `json:"Humidity,omitempty"`
+	CO2              int32   `json:"CO2,omitempty"`
+	Noise            int32   `json:"Noise,omitempty"`
+	Pressure         float32 `json:"Pressure,omitempty"`
+	AbsolutePressure float32 `json:"AbsolutePressure,omitempty"`
+	Rain             float32 `json:"Rain,omitempty"`
+	Rain1Hour        float32 `json:"sum_rain_1,omitempty"`
+	Rain1Day         float32 `json:"sum_rain_24,omitempty"`
+	WindAngle        float32 `json:"WindAngle,omitempty"`
+	WindStrength     float32 `json:"WindStrength,omitempty"`
+	GustAngle        float32 `json:"GustAngle,omitempty"`
+	GustStrength     float32 `json:"GustStrength,omitempty"`
+	LastMeasure      float64 `json:"time_utc"`
 }
+
+var NAModuleMap = map[string][]string{
+	"NAMain": []string{
+		NAMainTemperature,
+		NAMainHumidity,
+		NAMainCO2,
+		NAMainNoise,
+		NAMainPressure,
+		NAMainAbsolutePressure,
+	},
+	"NAModule1": []string{
+		NAModule1Temperature,
+		NAModule1Humidity,
+	},
+	"NAModule2": []string{
+		NAModule2WindAngle,
+		NAModule2WindStrength,
+		NAModule2GustAngle,
+		NAModule2GustStrength,
+	},
+	"NAModule3": []string{
+		NAModule3Rain,
+		NAModule3Rain1Hour,
+		NAModule3Rain1Day,
+	},
+	"NAModule4": []string{
+		NAModule4Temperature,
+		NAModule4Humidity,
+		NAModule4CO2,
+	},
+}
+
+// Main module
+const (
+	NAMainTemperature      = "Temperature"
+	NAMainHumidity         = "Humidity"
+	NAMainCO2              = "CO2"
+	NAMainNoise            = "Noise"
+	NAMainPressure         = "Pressure"
+	NAMainAbsolutePressure = "AbsolutePressure"
+)
+
+// Outdoor module
+const (
+	NAModule1Temperature = "Temperature"
+	NAModule1Humidity    = "Humidity"
+)
+
+// Wind module
+const (
+	NAModule2WindAngle    = "WindAngle"
+	NAModule2WindStrength = "WindStrength"
+	NAModule2GustAngle    = "GustAngle"
+	NAModule2GustStrength = "GustStrength"
+)
+
+// Rain module
+const (
+	NAModule3Rain      = "Rain"
+	NAModule3Rain1Hour = "Rain1Hour"
+	NAModule3Rain1Day  = "Rain1Day"
+)
+
+// Aux Indoor module
+const (
+	NAModule4Temperature = "Temperature"
+	NAModule4Humidity    = "Humidity"
+	NAModule4CO2         = "CO2"
+)
 
 // NewClient create a handle authentication to Netamo API
 func NewClient(config Config) (*Client, error) {
@@ -129,6 +188,7 @@ func NewClient(config Config) (*Client, error) {
 	return &Client{
 		oauth:      oauth,
 		httpClient: oauth.Client(oauth2.NoContext, token),
+		Dc:         &DeviceCollection{},
 	}, err
 }
 
@@ -200,49 +260,45 @@ func processHTTPResponse(resp *http.Response, err error, holder interface{}) err
 	return nil
 }
 
-// GetDeviceCollection returns the list of stations owned by the user, and their modules
-func (c *Client) GetDeviceCollection() (*DeviceCollection, error) {
-	//resp, err := c.doHTTPPostForm(deviceURL, url.Values{"app_type": {"app_station"}})
+// GetStations returns the list of stations owned by the user, and their modules
+func (c *Client) Read() (*DeviceCollection, error) {
 	resp, err := c.doHTTPGet(deviceURL, url.Values{"app_type": {"app_station"}})
-	dc := &DeviceCollection{}
+	//dc := &DeviceCollection{}
 
-	if err = processHTTPResponse(resp, err, dc); err != nil {
+	if err = processHTTPResponse(resp, err, c.Dc); err != nil {
 		return nil, err
 	}
 
-	// associated each module to its station
-	for i, station := range dc.Body.Stations {
-		for _, module := range dc.Body.Modules {
-			if module.MainDevice == station.ID {
-				dc.Body.Stations[i].AssociatedModules = append(dc.Body.Stations[i].AssociatedModules, module)
-			}
-		}
-	}
-
-	return dc, nil
+	return c.Dc, nil
 }
 
-// Stations returns the list of stations
+// Devices returns the list of devices
+func (dc *DeviceCollection) Devices() []*Device {
+	return dc.Body.Devices
+}
+
+// Stations is an alias of Devices
 func (dc *DeviceCollection) Stations() []*Device {
-	return dc.Body.Stations
+	return dc.Devices()
 }
 
-// Modules returns the list of modules associated to this station
-// also return station itself in the list
-func (s *Device) Modules() []*Device {
-	modules := s.AssociatedModules
+// Modules returns associated device module
+func (d *Device) Modules() []*Device {
+	modules := d.LinkedModules
+	modules = append(modules, d)
 
-	modules = append(modules, s)
 	return modules
 }
 
 // Data returns timestamp and the list of sensor value for this module
-func (s *Device) Data() (int, map[string]interface{}) {
+func (d *Device) Data() (int, map[string]interface{}) {
 
 	m := make(map[string]interface{})
-	for _, datatype := range s.DataType {
-		m[datatype] = reflect.Indirect(reflect.ValueOf(s.DashboardData)).FieldByName(datatype).Interface()
+	if moduleMap, ok := NAModuleMap[d.Type]; ok {
+		for _, datatype := range moduleMap {
+			m[datatype] = reflect.Indirect(reflect.ValueOf(d.DashboardData)).FieldByName(datatype).Interface()
+		}
 	}
 
-	return int(s.DashboardData.LastMesure), m
+	return int(d.DashboardData.LastMeasure), m
 }

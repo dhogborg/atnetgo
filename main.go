@@ -8,10 +8,10 @@ import (
 
 	log "github.com/Sirupsen/logrus"
 	"github.com/codegangsta/cli"
-	netatmo "github.com/exzz/netatmo-api-go"
+	netatmo "github.com/dhogborg/netatmo-api-go"
 )
 
-// filterd device collection
+// DeviceCollection contains filterd device collection
 type DeviceCollection struct {
 	NetatmoStations []*netatmo.Device
 	Modules         []*netatmo.Device
@@ -23,7 +23,7 @@ func main() {
 	app := cli.NewApp()
 	app.Name = "atnetgo"
 	app.Usage = "Read values from the Netatmo API and write to stdout"
-	app.Version = "0.0.3"
+	app.Version = "0.0.4"
 	app.Author = "github.com/dhogborg"
 	app.Email = "d@hogborg.se"
 
@@ -105,7 +105,7 @@ func getDevices(ctx *cli.Context) *DeviceCollection {
 		os.Exit(1)
 	}
 
-	dc, err := n.GetDeviceCollection()
+	dc, err := n.Read()
 	if err != nil {
 		log.WithFields(log.Fields{
 			"error": err.Error(),
@@ -121,8 +121,7 @@ func getDevices(ctx *cli.Context) *DeviceCollection {
 
 func filterDevices(ctx *cli.Context, dc *netatmo.DeviceCollection) *DeviceCollection {
 	collection := &DeviceCollection{
-		NetatmoStations: dc.Body.Stations,
-		Modules:         dc.Body.Modules,
+		NetatmoStations: dc.Stations(),
 	}
 
 	if sfilter := ctx.GlobalString("station"); sfilter != "" {
